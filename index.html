@@ -465,7 +465,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const STORAGE_KEY = "cashbook_app_v3";
+    const STORAGE_KEY = "cashbook_app_v4";
     const yen = n => "¥" + Math.round(Number(n || 0)).toLocaleString("ja-JP");
     const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
     const today = () => new Date().toISOString().slice(0,10);
@@ -484,6 +484,14 @@
     let txType = "expense";
     let selectedMediumId = null;
 
+
+    function ensureDefaultDates(){
+      const txDate = document.getElementById("txDate");
+      const transferDate = document.getElementById("transferDate");
+      if(txDate && !txDate.value) txDate.value = today();
+      if(transferDate && !transferDate.value) transferDate.value = today();
+    }
+
     function load(){
       const raw = localStorage.getItem(STORAGE_KEY);
       if(raw){
@@ -496,10 +504,10 @@
       }
       if(!selectedMediumId && state.media[0]) selectedMediumId = state.media[0].id;
       const m = ym(today());
-      document.getElementById("txDate").value = today();
-      document.getElementById("transferDate").value = today();
+      ensureDefaultDates();
       document.getElementById("monthPicker").value = m;
       document.getElementById("historyMonth").value = m;
+      ensureDefaultDates();
       render();
     }
 
@@ -612,6 +620,7 @@
       document.getElementById("txAmount").value = "";
       document.getElementById("txMemo").value = "";
       if(clearDate) document.getElementById("txDate").value = today();
+      ensureDefaultDates();
     }
 
     function addTransfer(){
@@ -898,6 +907,11 @@
 
     load();
     showScreen(localStorage.getItem(STORAGE_KEY + "_screen") || "home");
+    document.addEventListener("focusin", event => {
+      if(event.target && (event.target.id === "txDate" || event.target.id === "transferDate") && !event.target.value){
+        event.target.value = today();
+      }
+    });
 
     if("serviceWorker" in navigator && location.protocol !== "file:"){
       navigator.serviceWorker.register("./service-worker.js").catch(()=>{});
