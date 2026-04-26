@@ -1,0 +1,907 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>出納帳アプリ</title>
+  <meta name="theme-color" content="#f6f3ee" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <style>
+    :root{
+      --bg:#f6f3ee;
+      --card:#ffffff;
+      --ink:#222222;
+      --muted:#6f6a63;
+      --line:#e5ded4;
+      --accent:#4f7cff;
+      --accent2:#2f6f55;
+      --danger:#c74747;
+      --warn:#a66a00;
+      --shadow:0 8px 24px rgba(30,24,18,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:var(--bg);
+      color:var(--ink);
+      line-height:1.55;
+      -webkit-tap-highlight-color:transparent;
+    }
+    header{
+      position:sticky;
+      top:0;
+      z-index:20;
+      background:rgba(246,243,238,.92);
+      backdrop-filter:blur(12px);
+      border-bottom:1px solid var(--line);
+      padding:14px 16px 10px;
+    }
+    .top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      max-width:980px;
+      margin:0 auto;
+    }
+    h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.02em}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:7px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:#fff;
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    main{max-width:980px;margin:0 auto;padding:14px 14px 88px}
+    .grid{display:grid;grid-template-columns:1fr;gap:12px}
+    @media (min-width:820px){.grid{grid-template-columns:1fr 1fr}.wide{grid-column:1 / -1}}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px;
+    }
+    .card h2{
+      margin:0 0 10px;
+      font-size:16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+    .summary{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    .metric{
+      padding:12px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:#fbfaf8;
+    }
+    .metric .label{font-size:12px;color:var(--muted)}
+    .metric .value{font-size:21px;font-weight:800;margin-top:3px}
+    .value.minus{color:var(--danger)}
+    .value.plus{color:var(--accent2)}
+    button,input,select,textarea{
+      font:inherit;
+    }
+    input,select,textarea{
+      width:100%;
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--ink);
+      border-radius:13px;
+      padding:10px 11px;
+      outline:none;
+    }
+    input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(79,124,255,.12)}
+    label{display:block;font-size:12px;color:var(--muted);margin:9px 0 5px}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+    button{
+      border:0;
+      border-radius:14px;
+      padding:10px 12px;
+      background:var(--accent);
+      color:white;
+      font-weight:700;
+      cursor:pointer;
+      min-height:42px;
+    }
+    button.secondary{background:#eee8df;color:#2b2824}
+    button.green{background:var(--accent2)}
+    button.danger{background:var(--danger)}
+    button.ghost{background:transparent;color:var(--muted);border:1px solid var(--line)}
+    button.small{font-size:12px;padding:7px 9px;min-height:34px;border-radius:12px}
+    button:active{transform:translateY(1px)}
+    .medium-list{display:grid;gap:8px}
+    .medium-item{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:10px;
+      background:#fbfaf8;
+    }
+    .medium-left{display:flex;align-items:center;gap:10px;min-width:0}
+    .dot{width:14px;height:14px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+    .name{font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sub{font-size:12px;color:var(--muted)}
+    .yen{font-weight:850;font-size:16px;white-space:nowrap}
+    .tabs{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:8px;
+      margin-bottom:10px;
+    }
+    .tab{
+      background:#eee8df;
+      color:#2b2824;
+      border:1px solid var(--line);
+    }
+    .tab.active{background:var(--accent);color:#fff;border-color:transparent}
+    .quick-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:8px;
+      margin-top:8px;
+    }
+    @media (min-width:520px){.quick-grid{grid-template-columns:repeat(4,1fr)}}
+    .quick{
+      padding:10px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fbfaf8;
+      text-align:left;
+      color:var(--ink);
+      min-height:70px;
+    }
+    .quick.selected{outline:3px solid rgba(79,124,255,.18);border-color:var(--accent)}
+    .quick .qname{font-weight:800}
+    .quick .qbal{font-size:12px;color:var(--muted)}
+    .history{display:grid;gap:8px;max-height:460px;overflow:auto;padding-right:2px}
+    .tx{
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:10px;
+      background:#fbfaf8;
+      display:grid;
+      gap:6px;
+    }
+    .tx-top{display:flex;justify-content:space-between;gap:10px}
+    .tx-title{font-weight:800}
+    .tx-meta{font-size:12px;color:var(--muted)}
+    .tx-amount{font-weight:850;white-space:nowrap}
+    .tx-amount.expense{color:var(--danger)}
+    .tx-amount.income{color:var(--accent2)}
+    .tx-amount.transfer{color:var(--warn)}
+    .filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+    .bar-wrap{display:grid;gap:8px}
+    .bar-row{display:grid;grid-template-columns:86px 1fr 90px;gap:8px;align-items:center;font-size:13px}
+    .bar-bg{height:12px;border-radius:999px;background:#eee8df;overflow:hidden}
+    .bar{height:100%;background:var(--danger);border-radius:999px;min-width:3px}
+    .empty{
+      color:var(--muted);
+      font-size:13px;
+      text-align:center;
+      padding:18px 8px;
+      border:1px dashed var(--line);
+      border-radius:14px;
+      background:#fbfaf8;
+    }
+    dialog{
+      border:0;
+      border-radius:22px;
+      padding:0;
+      width:min(92vw,460px);
+      box-shadow:0 18px 60px rgba(0,0,0,.24);
+    }
+    dialog::backdrop{background:rgba(0,0,0,.26)}
+    .modal{padding:16px;background:#fff;border-radius:22px}
+    .modal h3{margin:0 0 10px;font-size:17px}
+    .toast{
+      position:fixed;
+      left:50%;
+      bottom:22px;
+      transform:translateX(-50%) translateY(30px);
+      background:#222;
+      color:#fff;
+      border-radius:999px;
+      padding:10px 14px;
+      opacity:0;
+      transition:.25s;
+      z-index:80;
+      font-size:13px;
+      pointer-events:none;
+    }
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+    .muted{color:var(--muted);font-size:12px}
+    .hide{display:none!important}
+
+    .screen{display:none}
+    .screen.active{display:block}
+    .bottom-nav{
+      position:fixed;
+      left:50%;
+      bottom:0;
+      transform:translateX(-50%);
+      width:min(100%,980px);
+      z-index:50;
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:6px;
+      padding:8px 10px calc(8px + env(safe-area-inset-bottom));
+      background:rgba(246,243,238,.94);
+      backdrop-filter:blur(14px);
+      border-top:1px solid var(--line);
+    }
+    .nav-btn{
+      min-height:48px;
+      padding:6px 4px;
+      border-radius:15px;
+      background:transparent;
+      color:var(--muted);
+      border:1px solid transparent;
+      font-size:11px;
+      font-weight:750;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:2px;
+    }
+    .nav-btn .ico{font-size:18px;line-height:1}
+    .nav-btn.active{
+      background:#fff;
+      color:var(--accent);
+      border-color:var(--line);
+      box-shadow:0 5px 18px rgba(30,24,18,.08);
+    }
+    @media (min-width:820px){
+      .screen.active .grid{grid-template-columns:1fr 1fr}
+      .screen.active .grid.one{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="top">
+      <h1>出納帳</h1>
+      <span class="pill" id="savedState">自動保存</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="screen active" id="screen-home">
+      <div class="grid">
+        <section class="card wide">
+          <h2>全体</h2>
+          <div class="summary">
+            <div class="metric">
+              <div class="label">現在の合計残高</div>
+              <div class="value" id="totalBalance">¥0</div>
+            </div>
+            <div class="metric">
+              <div class="label">今月の支出</div>
+              <div class="value minus" id="monthExpense">¥0</div>
+            </div>
+            <div class="metric">
+              <div class="label">今月の収入</div>
+              <div class="value plus" id="monthIncome">¥0</div>
+            </div>
+            <div class="metric">
+              <div class="label">今月の差引</div>
+              <div class="value" id="monthNet">¥0</div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-record">
+      <div class="grid">
+        <section class="card">
+          <h2>入出金を記録</h2>
+          <div class="tabs">
+            <button class="tab active" id="tabExpense" onclick="setTxType('expense')">使った</button>
+            <button class="tab" id="tabIncome" onclick="setTxType('income')">受け取った</button>
+          </div>
+
+          <label>媒体をタップ</label>
+          <div class="quick-grid" id="quickMedia"></div>
+
+          <div class="row">
+            <div>
+              <label>金額</label>
+              <input id="txAmount" inputmode="numeric" placeholder="例: 1200" />
+            </div>
+            <div>
+              <label>日付</label>
+              <input id="txDate" type="date" />
+            </div>
+          </div>
+
+          <label>メモ・用途</label>
+          <input id="txMemo" placeholder="例: 昼食、交通費、仕送り" />
+
+          <div class="actions">
+            <button onclick="addTransaction()">記録する</button>
+            <button class="secondary" onclick="clearTxForm()">入力を消す</button>
+          </div>
+        </section>
+
+        <section class="card">
+          <h2>媒体間の移動</h2>
+          <p class="muted">例: 銀行から現金へ1,000円下ろす、現金からSuicaへチャージする。</p>
+          <div class="row">
+            <div>
+              <label>移動元</label>
+              <select id="fromMedium"></select>
+            </div>
+            <div>
+              <label>移動先</label>
+              <select id="toMedium"></select>
+            </div>
+          </div>
+          <div class="row">
+            <div>
+              <label>金額</label>
+              <input id="transferAmount" inputmode="numeric" placeholder="例: 1000" />
+            </div>
+            <div>
+              <label>日付</label>
+              <input id="transferDate" type="date" />
+            </div>
+          </div>
+          <label>メモ</label>
+          <input id="transferMemo" placeholder="例: Suicaチャージ" />
+          <div class="actions">
+            <button class="green" onclick="addTransfer()">移動を記録</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-monthly">
+      <div class="grid one">
+        <section class="card">
+          <h2>月別の支出</h2>
+          <div class="filters">
+            <input id="monthPicker" type="month" onchange="render()" />
+            <select id="chartMode" onchange="render()">
+              <option value="medium">媒体別</option>
+              <option value="memo">メモ別</option>
+            </select>
+          </div>
+          <div class="bar-wrap" id="monthlyBars"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-history">
+      <div class="grid one">
+        <section class="card">
+          <h2>
+            履歴
+            <span class="muted" id="historyCount"></span>
+          </h2>
+          <div class="filters">
+            <input id="historyMonth" type="month" onchange="render()" />
+            <select id="historyType" onchange="render()">
+              <option value="all">すべて</option>
+              <option value="expense">支出</option>
+              <option value="income">収入</option>
+              <option value="transfer">移動</option>
+            </select>
+          </div>
+          <div class="history" id="history"></div>
+        </section>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-settings">
+      <div class="grid one">
+        <section class="card">
+          <h2>
+            媒体
+            <button class="small" onclick="openMediumModal()">追加</button>
+          </h2>
+          <p class="muted">媒体の追加・編集・削除はホーム画面と同じ内容です。</p>
+          <div class="medium-list" id="settingsMediumList"></div>
+        </section>
+
+        <section class="card">
+          <h2>データ</h2>
+          <p class="muted">入力内容はこの端末のブラウザ内に保存されます。別端末へ移す場合はエクスポートを使ってください。</p>
+          <div class="actions">
+            <button class="secondary" onclick="exportData()">エクスポート</button>
+            <button class="secondary" onclick="document.getElementById('importFile').click()">インポート</button>
+            <button class="danger" onclick="resetAll()">全削除</button>
+          </div>
+          <input id="importFile" class="hide" type="file" accept="application/json" onchange="importData(event)" />
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom-nav" aria-label="画面切り替え">
+    <button class="nav-btn active" id="nav-home" onclick="showScreen('home')"><span class="ico">🏠</span><span>ホーム</span></button>
+    <button class="nav-btn" id="nav-record" onclick="showScreen('record')"><span class="ico">✍️</span><span>記録</span></button>
+    <button class="nav-btn" id="nav-monthly" onclick="showScreen('monthly')"><span class="ico">📊</span><span>月別</span></button>
+    <button class="nav-btn" id="nav-history" onclick="showScreen('history')"><span class="ico">📋</span><span>履歴</span></button>
+    <button class="nav-btn" id="nav-settings" onclick="showScreen('settings')"><span class="ico">⚙️</span><span>設定</span></button>
+  </nav>
+
+  <dialog id="mediumDialog">
+    <div class="modal">
+      <h3 id="mediumDialogTitle">媒体を追加</h3>
+      <input type="hidden" id="mediumEditId" />
+      <label>名前</label>
+      <input id="mediumName" placeholder="例: 現金、PayPay、銀行、Suica" />
+      <label>現在入っている金額</label>
+      <input id="mediumBalance" inputmode="numeric" placeholder="例: 5000" />
+      <label>色</label>
+      <input id="mediumColor" type="color" value="#4f7cff" />
+      <div class="actions">
+        <button onclick="saveMedium()">保存</button>
+        <button class="secondary" onclick="closeMediumModal()">閉じる</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = "cashbook_app_v3";
+    const yen = n => "¥" + Math.round(Number(n || 0)).toLocaleString("ja-JP");
+    const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+    const today = () => new Date().toISOString().slice(0,10);
+    const ym = d => (d || today()).slice(0,7);
+
+    let state = {
+      media: [
+        {id: uid(), name: "現金", balance: 0, color: "#4f7cff"},
+        {id: uid(), name: "PayPay", balance: 0, color: "#e85a5a"},
+        {id: uid(), name: "銀行", balance: 0, color: "#2f6f55"},
+        {id: uid(), name: "Suica", balance: 0, color: "#36a852"}
+      ],
+      transactions: []
+    };
+
+    let txType = "expense";
+    let selectedMediumId = null;
+
+    function load(){
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if(raw){
+        try{
+          const parsed = JSON.parse(raw);
+          if(parsed && Array.isArray(parsed.media) && Array.isArray(parsed.transactions)){
+            state = parsed;
+          }
+        }catch(e){}
+      }
+      if(!selectedMediumId && state.media[0]) selectedMediumId = state.media[0].id;
+      const m = ym(today());
+      document.getElementById("txDate").value = today();
+      document.getElementById("transferDate").value = today();
+      document.getElementById("monthPicker").value = m;
+      document.getElementById("historyMonth").value = m;
+      render();
+    }
+
+    function save(){
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      const el = document.getElementById("savedState");
+      el.textContent = "保存済み";
+      setTimeout(()=>el.textContent = "自動保存", 900);
+    }
+
+    function toast(msg){
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(()=>el.classList.remove("show"), 1600);
+    }
+
+    function normalizeAmount(v){
+      const n = Number(String(v).replace(/[^\d.-]/g,""));
+      return Number.isFinite(n) ? Math.round(n) : 0;
+    }
+
+    function getMedium(id){ return state.media.find(m => m.id === id); }
+
+    function setTxType(type){
+      txType = type;
+      document.getElementById("tabExpense").classList.toggle("active", type === "expense");
+      document.getElementById("tabIncome").classList.toggle("active", type === "income");
+    }
+
+    function openMediumModal(medium){
+      document.getElementById("mediumDialogTitle").textContent = medium ? "媒体を編集" : "媒体を追加";
+      document.getElementById("mediumEditId").value = medium ? medium.id : "";
+      document.getElementById("mediumName").value = medium ? medium.name : "";
+      document.getElementById("mediumBalance").value = medium ? medium.balance : "";
+      document.getElementById("mediumColor").value = medium ? medium.color : "#4f7cff";
+      document.getElementById("mediumDialog").showModal();
+      setTimeout(()=>document.getElementById("mediumName").focus(), 50);
+    }
+
+    function closeMediumModal(){
+      document.getElementById("mediumDialog").close();
+    }
+
+    function saveMedium(){
+      const id = document.getElementById("mediumEditId").value;
+      const name = document.getElementById("mediumName").value.trim();
+      const balance = normalizeAmount(document.getElementById("mediumBalance").value);
+      const color = document.getElementById("mediumColor").value;
+      if(!name){ toast("名前を入力してください"); return; }
+
+      if(id){
+        const m = getMedium(id);
+        if(m){
+          m.name = name;
+          m.balance = balance;
+          m.color = color;
+        }
+      }else{
+        const medium = {id: uid(), name, balance, color};
+        state.media.push(medium);
+        selectedMediumId = medium.id;
+      }
+      save();
+      closeMediumModal();
+      render();
+      toast("媒体を保存しました");
+    }
+
+    function deleteMedium(id){
+      const used = state.transactions.some(t => t.mediumId === id || t.fromId === id || t.toId === id);
+      const m = getMedium(id);
+      if(!m) return;
+      const msg = used
+        ? "この媒体を削除すると、関連する履歴の媒体名は「削除済み」表示になります。削除しますか？"
+        : "この媒体を削除しますか？";
+      if(!confirm(msg)) return;
+      state.media = state.media.filter(x => x.id !== id);
+      if(selectedMediumId === id) selectedMediumId = state.media[0]?.id || null;
+      save();
+      render();
+    }
+
+    function addTransaction(){
+      const amount = normalizeAmount(document.getElementById("txAmount").value);
+      const date = document.getElementById("txDate").value || today();
+      const memo = document.getElementById("txMemo").value.trim();
+      const m = getMedium(selectedMediumId);
+      if(!m){ toast("媒体を選んでください"); return; }
+      if(amount <= 0){ toast("金額を入力してください"); return; }
+
+      const delta = txType === "expense" ? -amount : amount;
+      m.balance += delta;
+      state.transactions.push({
+        id: uid(),
+        type: txType,
+        mediumId: m.id,
+        amount,
+        date,
+        memo,
+        createdAt: new Date().toISOString()
+      });
+      save();
+      clearTxForm(false);
+      render();
+      toast("記録しました");
+    }
+
+    function clearTxForm(clearDate=true){
+      document.getElementById("txAmount").value = "";
+      document.getElementById("txMemo").value = "";
+      if(clearDate) document.getElementById("txDate").value = today();
+    }
+
+    function addTransfer(){
+      const fromId = document.getElementById("fromMedium").value;
+      const toId = document.getElementById("toMedium").value;
+      const amount = normalizeAmount(document.getElementById("transferAmount").value);
+      const date = document.getElementById("transferDate").value || today();
+      const memo = document.getElementById("transferMemo").value.trim();
+      if(!fromId || !toId){ toast("移動元と移動先を選んでください"); return; }
+      if(fromId === toId){ toast("同じ媒体には移動できません"); return; }
+      if(amount <= 0){ toast("金額を入力してください"); return; }
+      const from = getMedium(fromId);
+      const to = getMedium(toId);
+      if(!from || !to){ toast("媒体が見つかりません"); return; }
+
+      from.balance -= amount;
+      to.balance += amount;
+      state.transactions.push({
+        id: uid(),
+        type: "transfer",
+        fromId,
+        toId,
+        amount,
+        date,
+        memo,
+        createdAt: new Date().toISOString()
+      });
+      document.getElementById("transferAmount").value = "";
+      document.getElementById("transferMemo").value = "";
+      save();
+      render();
+      toast("移動を記録しました");
+    }
+
+    function deleteTx(id){
+      const t = state.transactions.find(x => x.id === id);
+      if(!t) return;
+      if(!confirm("この履歴を削除して残高を元に戻しますか？")) return;
+
+      if(t.type === "expense" || t.type === "income"){
+        const m = getMedium(t.mediumId);
+        if(m) m.balance -= (t.type === "expense" ? -t.amount : t.amount);
+      }else if(t.type === "transfer"){
+        const from = getMedium(t.fromId);
+        const to = getMedium(t.toId);
+        if(from) from.balance += t.amount;
+        if(to) to.balance -= t.amount;
+      }
+      state.transactions = state.transactions.filter(x => x.id !== id);
+      save();
+      render();
+      toast("削除しました");
+    }
+
+    function render(){
+      renderSummary();
+      renderMedia();
+      renderForms();
+      renderMonthlyBars();
+      renderHistory();
+    }
+
+    function renderSummary(){
+      const month = document.getElementById("monthPicker").value || ym(today());
+      const total = state.media.reduce((s,m)=>s + Number(m.balance || 0),0);
+      const monthTx = state.transactions.filter(t => ym(t.date) === month);
+      const expense = monthTx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+      const income = monthTx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+      const net = income - expense;
+      document.getElementById("totalBalance").textContent = yen(total);
+      document.getElementById("monthExpense").textContent = yen(expense);
+      document.getElementById("monthIncome").textContent = yen(income);
+      document.getElementById("monthNet").textContent = yen(net);
+      document.getElementById("monthNet").className = "value " + (net < 0 ? "minus" : net > 0 ? "plus" : "");
+    }
+
+    function renderMedia(){
+      const htmlText = mediumListHtml();
+      const homeList = document.getElementById("mediumList");
+      if(homeList) homeList.innerHTML = htmlText;
+      const settingsList = document.getElementById("settingsMediumList");
+      if(settingsList) settingsList.innerHTML = htmlText;
+    }
+
+    function mediumListHtml(){
+      if(state.media.length === 0){
+        return `<div class="empty">媒体がありません。まず「追加」から作成してください。</div>`;
+      }
+      return state.media.map(m => `
+        <div class="medium-item">
+          <div class="medium-left">
+            <span class="dot" style="background:${m.color}"></span>
+            <div>
+              <div class="name">${escapeHtml(m.name)}</div>
+              <div class="sub">現在残高</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div class="yen">${yen(m.balance)}</div>
+            <div class="actions" style="justify-content:flex-end;margin-top:6px">
+              <button class="small secondary" onclick='openMediumModal(${JSON.stringify(m)})'>編集</button>
+              <button class="small ghost" onclick="deleteMedium('${m.id}')">削除</button>
+            </div>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderForms(){
+      const quick = document.getElementById("quickMedia");
+      if(state.media.length === 0){
+        quick.innerHTML = `<div class="empty" style="grid-column:1/-1">媒体を追加してください。</div>`;
+      }else{
+        if(!getMedium(selectedMediumId)) selectedMediumId = state.media[0].id;
+        quick.innerHTML = state.media.map(m => `
+          <button class="quick ${m.id === selectedMediumId ? "selected" : ""}" onclick="selectMedium('${m.id}')">
+            <div class="qname"><span class="dot" style="display:inline-block;vertical-align:middle;background:${m.color}"></span> ${escapeHtml(m.name)}</div>
+            <div class="qbal">${yen(m.balance)}</div>
+          </button>
+        `).join("");
+      }
+
+      const from = document.getElementById("fromMedium");
+      const to = document.getElementById("toMedium");
+      const options = state.media.map(m => `<option value="${m.id}">${escapeHtml(m.name)} ${yen(m.balance)}</option>`).join("");
+      const oldFrom = from.value, oldTo = to.value;
+      from.innerHTML = options;
+      to.innerHTML = options;
+      if(state.media.some(m=>m.id===oldFrom)) from.value = oldFrom;
+      if(state.media.some(m=>m.id===oldTo)) to.value = oldTo;
+      if(!to.value && state.media[1]) to.value = state.media[1].id;
+      if(from.value === to.value && state.media[1]) to.value = state.media[1].id;
+    }
+
+    function selectMedium(id){
+      selectedMediumId = id;
+      renderForms();
+    }
+
+    function renderMonthlyBars(){
+      const month = document.getElementById("monthPicker").value || ym(today());
+      const mode = document.getElementById("chartMode").value;
+      const expenses = state.transactions.filter(t => t.type === "expense" && ym(t.date) === month);
+      const map = new Map();
+
+      expenses.forEach(t => {
+        let key = "未分類";
+        if(mode === "medium"){
+          key = getMedium(t.mediumId)?.name || "削除済み";
+        }else{
+          key = t.memo || "メモなし";
+        }
+        map.set(key, (map.get(key) || 0) + t.amount);
+      });
+
+      const items = [...map.entries()].sort((a,b)=>b[1]-a[1]);
+      const total = items.reduce((s,x)=>s+x[1],0);
+      const max = Math.max(...items.map(x=>x[1]), 1);
+      const box = document.getElementById("monthlyBars");
+      if(items.length === 0){
+        box.innerHTML = `<div class="empty">この月の支出はまだありません。</div>`;
+        return;
+      }
+      box.innerHTML = items.map(([name, amount]) => `
+        <div class="bar-row">
+          <div class="sub" title="${escapeAttr(name)}">${escapeHtml(shorten(name, 8))}</div>
+          <div class="bar-bg"><div class="bar" style="width:${Math.max(3, amount / max * 100)}%"></div></div>
+          <div style="text-align:right;font-weight:800">${yen(amount)}</div>
+        </div>
+      `).join("") + `<div class="muted" style="text-align:right;margin-top:4px">合計 ${yen(total)}</div>`;
+    }
+
+    function renderHistory(){
+      const month = document.getElementById("historyMonth").value || ym(today());
+      const type = document.getElementById("historyType").value;
+      let list = state.transactions.filter(t => ym(t.date) === month);
+      if(type !== "all") list = list.filter(t => t.type === type);
+      list.sort((a,b)=> (b.date + b.createdAt).localeCompare(a.date + a.createdAt));
+      document.getElementById("historyCount").textContent = `${list.length}件`;
+      const box = document.getElementById("history");
+      if(list.length === 0){
+        box.innerHTML = `<div class="empty">履歴がありません。</div>`;
+        return;
+      }
+      box.innerHTML = list.map(t => txHtml(t)).join("");
+    }
+
+    function txHtml(t){
+      if(t.type === "expense" || t.type === "income"){
+        const m = getMedium(t.mediumId);
+        const label = t.type === "expense" ? "支出" : "収入";
+        const sign = t.type === "expense" ? "-" : "+";
+        return `
+          <div class="tx">
+            <div class="tx-top">
+              <div>
+                <div class="tx-title">${escapeHtml(t.memo || label)}</div>
+                <div class="tx-meta">${t.date}・${escapeHtml(m?.name || "削除済み")}・${label}</div>
+              </div>
+              <div class="tx-amount ${t.type}">${sign}${yen(t.amount)}</div>
+            </div>
+            <div class="actions" style="margin-top:0">
+              <button class="small ghost" onclick="deleteTx('${t.id}')">削除</button>
+            </div>
+          </div>
+        `;
+      }
+      const from = getMedium(t.fromId);
+      const to = getMedium(t.toId);
+      return `
+        <div class="tx">
+          <div class="tx-top">
+            <div>
+              <div class="tx-title">${escapeHtml(t.memo || "媒体間の移動")}</div>
+              <div class="tx-meta">${t.date}・${escapeHtml(from?.name || "削除済み")} → ${escapeHtml(to?.name || "削除済み")}</div>
+            </div>
+            <div class="tx-amount transfer">${yen(t.amount)}</div>
+          </div>
+          <div class="actions" style="margin-top:0">
+            <button class="small ghost" onclick="deleteTx('${t.id}')">削除</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function exportData(){
+      const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "cashbook-data.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importData(event){
+      const file = event.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try{
+          const data = JSON.parse(reader.result);
+          if(!Array.isArray(data.media) || !Array.isArray(data.transactions)) throw new Error("bad");
+          state = data;
+          selectedMediumId = state.media[0]?.id || null;
+          save();
+          render();
+          toast("インポートしました");
+        }catch(e){
+          toast("読み込めないファイルです");
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = "";
+    }
+
+    function resetAll(){
+      if(!confirm("すべての媒体・履歴を削除しますか？")) return;
+      localStorage.removeItem(STORAGE_KEY);
+      state = {media:[], transactions:[]};
+      selectedMediumId = null;
+      render();
+      toast("削除しました");
+    }
+
+    function escapeHtml(s){
+      return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+    function escapeAttr(s){ return escapeHtml(s).replace(/"/g,"&quot;"); }
+    function shorten(s, n){ s = String(s); return s.length > n ? s.slice(0,n) + "…" : s; }
+
+
+    function showScreen(name){
+      ["home","record","monthly","history","settings"].forEach(key => {
+        const screen = document.getElementById("screen-" + key);
+        const nav = document.getElementById("nav-" + key);
+        if(screen) screen.classList.toggle("active", key === name);
+        if(nav) nav.classList.toggle("active", key === name);
+      });
+      localStorage.setItem(STORAGE_KEY + "_screen", name);
+      window.scrollTo({top:0, behavior:"smooth"});
+      render();
+    }
+
+    load();
+    showScreen(localStorage.getItem(STORAGE_KEY + "_screen") || "home");
+
+    if("serviceWorker" in navigator && location.protocol !== "file:"){
+      navigator.serviceWorker.register("./service-worker.js").catch(()=>{});
+    }
+  </script>
+</body>
+</html>
