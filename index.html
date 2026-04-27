@@ -425,7 +425,7 @@
 
         <section class="card">
           <h2>データ</h2>
-          <p class="muted">入力内容はこの端末のブラウザ内に保存されます。別端末へ移す場合はエクスポートを使ってください。</p>
+          <p class="muted">入力内容はこの端末のブラウザ内に保存されます。今後の更新版でも同じ保存場所を使います。別端末へ移す場合や念のためのバックアップにはエクスポートを使ってください。</p>
           <div class="actions">
             <button class="secondary" onclick="exportData()">エクスポート</button>
             <button class="secondary" onclick="document.getElementById('importFile').click()">インポート</button>
@@ -465,7 +465,7 @@
   <div class="toast" id="toast"></div>
 
   <script>
-    const STORAGE_KEY = "cashbook_app_v4";
+    const STORAGE_KEY = "cashbook_app";
     const yen = n => "¥" + Math.round(Number(n || 0)).toLocaleString("ja-JP");
     const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
     const today = () => new Date().toISOString().slice(0,10);
@@ -493,21 +493,38 @@
     }
 
     function load(){
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if(raw){
+      const legacyKeys = [
+        STORAGE_KEY,
+        "cashbook_app_v4",
+        "cashbook_app_v3",
+        "cashbook_app_v2",
+        "cashbook_app_v1"
+      ];
+
+      let loaded = false;
+      for(const key of legacyKeys){
+        const raw = localStorage.getItem(key);
+        if(!raw) continue;
         try{
           const parsed = JSON.parse(raw);
           if(parsed && Array.isArray(parsed.media) && Array.isArray(parsed.transactions)){
             state = parsed;
+            loaded = true;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+            break;
           }
         }catch(e){}
       }
+
+      if(!loaded){
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
       if(!selectedMediumId && state.media[0]) selectedMediumId = state.media[0].id;
       const m = ym(today());
       ensureDefaultDates();
       document.getElementById("monthPicker").value = m;
       document.getElementById("historyMonth").value = m;
-      ensureDefaultDates();
       render();
     }
 
@@ -900,13 +917,13 @@
         if(screen) screen.classList.toggle("active", key === name);
         if(nav) nav.classList.toggle("active", key === name);
       });
-      localStorage.setItem(STORAGE_KEY + "_screen", name);
+      localStorage.setItem("cashbook_app_screen", name);
       window.scrollTo({top:0, behavior:"smooth"});
       render();
     }
 
     load();
-    showScreen(localStorage.getItem(STORAGE_KEY + "_screen") || "home");
+    showScreen(localStorage.getItem("cashbook_app_screen") || "home");
     document.addEventListener("focusin", event => {
       if(event.target && (event.target.id === "txDate" || event.target.id === "transferDate") && !event.target.value){
         event.target.value = today();
