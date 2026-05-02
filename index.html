@@ -289,21 +289,29 @@
       <div class="grid">
         <section class="card wide">
           <h2>全体</h2>
+          <div class="filters">
+            <select id="homePeriodType" onchange="onHomePeriodTypeChange()">
+              <option value="month">月ごと</option>
+              <option value="year">今年</option>
+              <option value="all">全期間</option>
+            </select>
+            <input id="homeMonthPicker" type="month" onchange="render()" />
+          </div>
           <div class="summary">
             <div class="metric">
               <div class="label">現在の合計残高</div>
               <div class="value" id="totalBalance">¥0</div>
             </div>
             <div class="metric">
-              <div class="label">今月の支出</div>
+              <div class="label">選択期間の支出</div>
               <div class="value minus" id="monthExpense">¥0</div>
             </div>
             <div class="metric">
-              <div class="label">今月の収入</div>
+              <div class="label">選択期間の収入</div>
               <div class="value plus" id="monthIncome">¥0</div>
             </div>
             <div class="metric">
-              <div class="label">今月の差引</div>
+              <div class="label">選択期間の差引</div>
               <div class="value" id="monthNet">¥0</div>
             </div>
           </div>
@@ -525,6 +533,8 @@
       ensureDefaultDates();
       document.getElementById("monthPicker").value = m;
       document.getElementById("historyMonth").value = m;
+      const homeMonth = document.getElementById("homeMonthPicker");
+      if(homeMonth && !homeMonth.value) homeMonth.value = m;
       render();
     }
 
@@ -701,17 +711,42 @@
     }
 
     function renderSummary(){
-      const month = document.getElementById("monthPicker").value || ym(today());
       const total = state.media.reduce((s,m)=>s + Number(m.balance || 0),0);
-      const monthTx = state.transactions.filter(t => ym(t.date) === month);
-      const expense = monthTx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
-      const income = monthTx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+      const period = getHomePeriod();
+      const targetTx = state.transactions.filter(t => inHomePeriod(t.date, period));
+      const expense = targetTx.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+      const income = targetTx.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
       const net = income - expense;
+
       document.getElementById("totalBalance").textContent = yen(total);
       document.getElementById("monthExpense").textContent = yen(expense);
       document.getElementById("monthIncome").textContent = yen(income);
       document.getElementById("monthNet").textContent = yen(net);
       document.getElementById("monthNet").className = "value " + (net < 0 ? "minus" : net > 0 ? "plus" : "");
+    }
+
+    function getHomePeriod(){
+      const typeEl = document.getElementById("homePeriodType");
+      const monthEl = document.getElementById("homeMonthPicker");
+      const type = typeEl ? typeEl.value : "month";
+      const month = monthEl && monthEl.value ? monthEl.value : ym(today());
+      const year = today().slice(0,4);
+      return {type, month, year};
+    }
+
+    function inHomePeriod(date, period){
+      if(!date) return false;
+      if(period.type === "all") return true;
+      if(period.type === "year") return date.slice(0,4) === period.year;
+      return ym(date) === period.month;
+    }
+
+    function onHomePeriodTypeChange(){
+      const typeEl = document.getElementById("homePeriodType");
+      const picker = document.getElementById("homeMonthPicker");
+      if(!typeEl || !picker) return;
+      picker.style.display = typeEl.value === "month" ? "" : "none";
+      render();
     }
 
     function renderMedia(){
@@ -923,6 +958,7 @@
     }
 
     load();
+    onHomePeriodTypeChange();
     showScreen(localStorage.getItem("cashbook_app_screen") || "home");
     document.addEventListener("focusin", event => {
       if(event.target && (event.target.id === "txDate" || event.target.id === "transferDate") && !event.target.value){
